@@ -9,7 +9,7 @@
 import axios from "axios";
 
 // Ruta base del backend
-const API_URL = "http://localhost:5000/api/contacts";
+const API_URL = "https://dashboardjavic.onrender.com/api/contacts";
 
 /**
  * Obtener todos los contactos desde el backend

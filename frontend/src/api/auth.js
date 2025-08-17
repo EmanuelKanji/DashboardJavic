@@ -10,7 +10,7 @@
 import axios from 'axios';
 
 // URL base de tu backend (usada por todas las peticiones)
-const API_URL = process.env.REACT_APP_API_URL || "https://dashboardjavic.onrender.com";
+const API_URL = process.env.REACT_APP_API_URL || "https://dashboardjavic.onrender.com/api";
 
 /**
  * loginRequest
