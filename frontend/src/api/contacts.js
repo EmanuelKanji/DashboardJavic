@@ -1,53 +1,46 @@
 /**
- * api/contacts.js
+ * src/api/contacts.js
  * ----------------------------------------------------------------------------
- * Servicio para manejar las peticiones relacionadas con los contactos
- * del Dashboard. Usa el token guardado para autenticación.
+ * Servicio que maneja todas las peticiones relacionadas con los contactos
+ * desde el Dashboard.
+ *
+ * - Se apoya en la instancia `api` (src/api/api.js), que ya incluye:
+ *   * baseURL = process.env.REACT_APP_API_URL (ej: https://dashboardjavic.onrender.com/api)
+ *   * Headers JSON por defecto
+ *   * Token JWT de localStorage en cada request
+ *   * Manejo global de 401 (redirección a /login)
+ *
+ * Con esto ya no necesitas pasar el token manualmente.
  * ----------------------------------------------------------------------------
  */
 
-import axios from "axios";
-
-// Ruta base del backend
-const API_URL = "https://dashboardjavic.onrender.com/api/contacts";
+import api from "./api";
 
 /**
- * Obtener todos los contactos desde el backend
- * @param {string} token - JWT de autenticación
+ * Obtener todos los contactos
+ * @returns {Promise<Array>} Lista de contactos desde la API
  */
-export const getContacts = async (token) => {
-  const response = await axios.get(API_URL, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  return response.data;
+export const getContacts = async () => {
+  const { data } = await api.get("/contacts");
+  return data;
 };
 
 /**
- * Eliminar un contacto por su ID
- * @param {string} id - ID del contacto
- * @param {string} token - JWT de autenticación
+ * Eliminar un contacto por ID
+ * @param {string} id - ID del contacto a eliminar
+ * @returns {Promise<Object>} Mensaje de éxito del backend
  */
-export const deleteContact = async (id, token) => {
-  const response = await axios.delete(`${API_URL}/${id}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  return response.data;
+export const deleteContact = async (id) => {
+  const { data } = await api.delete(`/contacts/${id}`);
+  return data;
 };
 
 /**
  * Marcar un contacto como "contactado"
  * @param {string} id - ID del contacto
- * @param {string} token - JWT de autenticación
+ * @returns {Promise<Object>} Contacto actualizado
  */
-export const markAsContacted = async (id, token) => {
-  const response = await axios.patch(`${API_URL}/${id}/contacted`, {}, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  return response.data;
+export const markAsContacted = async (id) => {
+  const { data } = await api.patch(`/contacts/${id}/contacted`, {});
+  return data;
 };
