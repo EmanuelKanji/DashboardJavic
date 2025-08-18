@@ -6,7 +6,7 @@
  * - Configura CORS (incluye PATCH) y preflight global (OPTIONS)
  * - Habilita parseo de JSON
  * - Expone /health para monitoreo
- * - Monta rutas: /api/auth y /api/contacts
+ * - Monta rutas: /api/auth, /api/contacts, /api/deal-contacts
  * - Arranca el servidor usando el puerto de Render (process.env.PORT)
  * ----------------------------------------------------------------------------
  */
@@ -17,6 +17,7 @@ const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const contactRoutes = require('./routes/contactRoutes');
 const authRoutes = require('./routes/authRoutes');
+const dealContactRoutes = require('./routes/dealContactRoutes'); // 👈 NUEVA RUTA
 const config = require('./config/config'); // opcional: { api: { base: '/api/contacts' }, messages: {...} }
 
 /* 1) Variables de entorno y DB ------------------------------------------------
@@ -81,10 +82,12 @@ app.get('/health', (req, res) => res.json({ ok: true }));
 /* 7) Rutas del API -----------------------------------------------------------
    - /api/auth: login, etc. (controladores de autenticación)
    - /api/contacts: CRUD y acciones sobre contactos (protegido con JWT)
+   - /api/deal-contacts: libreta de contactos/contratos cerrados (protegido con JWT)
    - Si config.api?.base existe, la usa; si no, usa '/api/contacts' por defecto.
 ---------------------------------------------------------------------------- */
 app.use('/api/auth', authRoutes);
 app.use(config.api?.base || '/api/contacts', contactRoutes);
+app.use('/api/deal-contacts', dealContactRoutes); // 👈 NUEVA RUTA
 
 /* 8) Ruta raíz informativa ---------------------------------------------------
    - Respuesta simple para ver que la API está viva en "/".
