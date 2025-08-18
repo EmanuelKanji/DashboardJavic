@@ -3,34 +3,44 @@
  * ----------------------------------------------------------------------------
  * Define las rutas principales de la aplicación.
  * - Usa React Router para navegación entre páginas.
- * - Protege la ruta del Dashboard para que solo acceda el administrador.
+ * - Protege rutas privadas para que solo acceda el administrador autenticado.
+ * - Rutas:
+ *    /login      → login del admin
+ *    /dashboard  → panel principal
+ *    /libreta    → libreta de contactos (contratos cerrados)
  * ----------------------------------------------------------------------------
  */
 
-import React, { useContext } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import { AuthContext } from './context/AuthContext';
+import React, { useContext } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import DealContacts from "./pages/DealContacts"; // 👈 usamos la vista ya creada
+import { AuthContext } from "./context/AuthContext";
 
 const App = () => {
   const { user, loading } = useContext(AuthContext);
 
-  // Mientras se carga el estado de autenticación, no renderiza nada
+  // Mientras se evalúa la sesión, mostramos un fallback simple
   if (loading) return <p>Cargando...</p>;
 
   return (
     <Routes>
-      {/* Ruta pública: Login */}
+      {/* Ruta pública */}
       <Route path="/login" element={<Login />} />
 
-      {/* Ruta protegida: Dashboard */}
+      {/* Rutas protegidas */}
       <Route
         path="/dashboard"
         element={user ? <Dashboard /> : <Navigate to="/login" replace />}
       />
 
-      {/* Ruta por defecto: redirige a login */}
+      <Route
+        path="/libreta"
+        element={user ? <DealContacts /> : <Navigate to="/login" replace />}
+      />
+
+      {/* Por defecto → login */}
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
