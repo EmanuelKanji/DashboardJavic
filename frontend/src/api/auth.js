@@ -1,41 +1,42 @@
 /**
- * auth.js
+ * src/api/auth.js
  * ----------------------------------------------------------------------------
- * Módulo de servicios para autenticación.
- * - Se comunica con el backend para enviar las credenciales del login.
- * - Devuelve los datos del usuario y el token si son correctos.
+ * Servicios de autenticación del Dashboard.
+ * - Usa la instancia `api` (src/api/api.js) con baseURL = REACT_APP_API_URL.
+ * - Envía credenciales al backend y retorna { token, user } si son válidas.
+ * - Normaliza errores para que el componente muestre mensajes claros.
  * ----------------------------------------------------------------------------
  */
 
-import axios from 'axios';
-
-// URL base de tu backend (usada por todas las peticiones)
-const API_URL = process.env.REACT_APP_API_URL || "https://dashboardjavic.onrender.com/api";
+import api from "./api";
 
 /**
  * loginRequest
  * ----------------------------------------------------------------------------
- * Envia una solicitud POST al endpoint de login del backend.
- * @param {string} email - Correo electrónico del usuario.
- * @param {string} password - Contraseña del usuario.
- * @returns {Promise<Object>} - Devuelve el usuario y token si las credenciales son válidas.
+ * Realiza POST /auth/login con { email, password }.
+ * Retorna { token, user } si el backend valida correctamente.
+ * En caso de error, lanza un Error con un mensaje amigable.
+ * ----------------------------------------------------------------------------
+ * @param {string} email
+ * @param {string} password
+ * @returns {Promise<{ token: string, user: object }>}
  */
 export const loginRequest = async (email, password) => {
   try {
-    const response = await axios.post(`${API_URL}/auth/login`, {
-      email,
-      password
-    });
+    const { data } = await api.post("/auth/login", { email, password });
 
-    // Retorna el token y los datos del usuario
-    return response.data;
-
-  } catch (error) {
-    // Propaga el error para que lo maneje el componente que lo llama
-    if (error.response && error.response.data) {
-      throw new Error(error.response.data.error);
-    } else {
-      throw new Error('Error al conectar con el servidor');
+    // Validación básica de la forma de la respuesta
+    if (!data?.token || !data?.user) {
+      throw new Error(data?.message || "Respuesta inválida del servidor");
     }
+
+    return data; // -> { token, user }
+  } catch (err) {
+    // Mensaje de error consistente
+    const msg =
+      err?.response?.data?.message ||
+      err?.message ||
+      "No se pudo iniciar sesión";
+    throw new Error(msg);
   }
 };
