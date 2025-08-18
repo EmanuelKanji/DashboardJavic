@@ -4,7 +4,8 @@
  * Vista "Libreta de contactos (contratos cerrados)" - V1
  * - Lista los registros guardados en la base (tabla desktop / tarjetas móvil).
  * - Botón "Agregar contacto" (abre modal con DealContactForm).
- * - Usa servicios API: getDealContacts, createDealContact.
+ * - Botón "Eliminar" por registro (confirmación + actualización inmediata).
+ * - Usa servicios API: getDealContacts, createDealContact, deleteDealContact.
  * - Mantiene el estilo y estructura del Dashboard (Navbar + Sidebar).
  * ----------------------------------------------------------------------------
  */
@@ -14,7 +15,7 @@ import styled from "styled-components";
 import Navbar from "../components/Navbar";
 import Sidebar, { SIDEBAR_WIDTH } from "../components/Sidebar";
 import { AuthContext } from "../context/AuthContext";
-import { getDealContacts, createDealContact } from "../api/dealContacts";
+import { getDealContacts, createDealContact, deleteDealContact } from "../api/dealContacts";
 import DealContactForm from "../components/DealContactForm";
 
 const NAVBAR_HEIGHT = 72;
@@ -63,7 +64,7 @@ const Meta = styled.p`
   font-size: 0.95rem;
 `;
 
-/* Botón principal (agregar) ------------------------------------------------- */
+/* Botones ------------------------------------------------------------------- */
 const PrimaryBtn = styled.button`
   background-color: #2563eb;
   color: #fff;
@@ -76,6 +77,21 @@ const PrimaryBtn = styled.button`
   transition: all 0.2s ease;
 
   &:hover { background-color: #1d4ed8; transform: translateY(-1px); }
+  &:active { transform: translateY(0); }
+`;
+
+const DangerBtn = styled.button`
+  background-color: #ef4444;
+  color: #fff;
+  border: none;
+  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover { background-color: #dc2626; transform: translateY(-1px); }
   &:active { transform: translateY(0); }
 `;
 
@@ -92,7 +108,7 @@ const TableCard = styled.section`
 
 const Row = styled.div`
   display: grid;
-  grid-template-columns: 1.1fr 1.1fr 1fr 1.4fr 1.2fr 1.1fr 1.1fr;
+  grid-template-columns: 1.1fr 1.1fr 1fr 1.4fr 1.2fr 1.1fr 1.1fr 0.9fr; /* + Acciones */
   padding: 1rem;
   border-bottom: 1px solid #f1f5f9;
   align-items: center;
@@ -120,6 +136,11 @@ const Cell = styled.div`
     text-decoration: none;
   }
   a:hover { color: #1d4ed8; text-decoration: underline; }
+`;
+
+const ActionsCell = styled(Cell)`
+  justify-content: flex-start;
+  gap: 8px;
 `;
 
 /* Tarjetas (móvil) ---------------------------------------------------------- */
@@ -168,6 +189,12 @@ const CardBody = styled.div`
   gap: 8px;
 `;
 
+const CardFooter = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+`;
+
 const Field = styled.div`
   display: grid;
   grid-template-columns: 120px 1fr;
@@ -203,7 +230,7 @@ const Alert = styled.div`
 `;
 
 function DealContacts() {
-  const { logout } = useContext(AuthContext); // por si quieres usar en Navbar/Sidebar
+  const { logout } = useContext(AuthContext);
   const [items, setItems] = useState([]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -230,8 +257,23 @@ function DealContacts() {
   /* Guardar nuevo (desde el modal) ----------------------------------------- */
   const handleCreate = async (payload) => {
     const created = await createDealContact(payload);
-    // prepend para ver el nuevo arriba (creado más reciente)
-    setItems((prev) => [created, ...prev]);
+    setItems((prev) => [created, ...prev]); // prepend (más reciente arriba)
+  };
+
+  /* Eliminar contacto ------------------------------------------------------- */
+  const handleDelete = async (id) => {
+    const ok = window.confirm("¿Seguro que quieres eliminar este contacto?");
+    if (!ok) return;
+
+    try {
+      await deleteDealContact(id);
+      setItems((prev) => prev.filter((c) => c._id !== id));
+    } catch (e) {
+      console.error(e);
+      setError("No se pudo eliminar el contacto. Intenta nuevamente.");
+      // Opcional: limpiar alerta después de unos segundos
+      setTimeout(() => setError(""), 4000);
+    }
   };
 
   /* Helpers UI -------------------------------------------------------------- */
@@ -283,6 +325,7 @@ function DealContacts() {
             <Cell>Servicio</Cell>
             <Cell>Inicio</Cell>
             <Cell>Término</Cell>
+            <Cell>Acciones</Cell>
           </Row>
 
           {loading ? (
@@ -310,6 +353,9 @@ function DealContacts() {
                     </Badge>
                   </span>
                 </Cell>
+                <ActionsCell>
+                  <DangerBtn onClick={() => handleDelete(it._id)}>Eliminar</DangerBtn>
+                </ActionsCell>
               </Row>
             ))
           )}
@@ -331,32 +377,36 @@ function DealContacts() {
                   </Badge>
                 </CardHeader>
 
-                  <CardBody>
-                    <Field>
-                      <span>Nombre</span>
-                      <div>{it.nombre}</div>
-                    </Field>
-                    <Field>
-                      <span>Teléfono</span>
-                      <a href={`tel:${it.telefono}`}>{it.telefono}</a>
-                    </Field>
-                    <Field>
-                      <span>Dirección</span>
-                      <div>{it.direccion}</div>
-                    </Field>
-                    <Field>
-                      <span>Inicio</span>
-                      <div>{formatDate(it.fechaInicio)}</div>
-                    </Field>
-                    <Field>
-                      <span>Término</span>
-                      <div>{formatDate(it.fechaTermino)}</div>
-                    </Field>
-                    <Field style={{ gridColumn: "1 / -1" }}>
-                      <span>Servicio</span>
-                      <div>{it.descripcionServicio}</div>
-                    </Field>
-                  </CardBody>
+                <CardBody>
+                  <Field>
+                    <span>Nombre</span>
+                    <div>{it.nombre}</div>
+                  </Field>
+                  <Field>
+                    <span>Teléfono</span>
+                    <a href={`tel:${it.telefono}`}>{it.telefono}</a>
+                  </Field>
+                  <Field>
+                    <span>Dirección</span>
+                    <div>{it.direccion}</div>
+                  </Field>
+                  <Field>
+                    <span>Inicio</span>
+                    <div>{formatDate(it.fechaInicio)}</div>
+                  </Field>
+                  <Field>
+                    <span>Término</span>
+                    <div>{formatDate(it.fechaTermino)}</div>
+                  </Field>
+                  <Field style={{ gridColumn: "1 / -1" }}>
+                    <span>Servicio</span>
+                    <div>{it.descripcionServicio}</div>
+                  </Field>
+                </CardBody>
+
+                <CardFooter>
+                  <DangerBtn onClick={() => handleDelete(it._id)}>Eliminar</DangerBtn>
+                </CardFooter>
               </Card>
             ))
           )}
