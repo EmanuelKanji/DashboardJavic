@@ -1,9 +1,15 @@
 /**
- * Sidebar.js
+ * Sidebar.js (adaptado)
+ * ----------------------------------------------------------------------------
+ * - Mantiene el estilo oscuro y la estructura original.
+ * - Agrega navegación a la "Libreta de contactos" en /libreta.
+ * - Marca activo cada item según la ruta actual.
+ * - Cierra el sidebar en móvil al navegar (onClose()).
+ * ----------------------------------------------------------------------------
  */
 
 import React from "react";
-import styled, { css } from "styled-components";
+import styled from "styled-components";
 import { useLocation, useNavigate } from "react-router-dom";
 import { FaTachometerAlt, FaEnvelope, FaSignOutAlt } from "react-icons/fa";
 import { NAVBAR_HEIGHT } from "./Navbar";
@@ -13,13 +19,13 @@ export const SIDEBAR_WIDTH = 260;
 const BP_MD = 768;
 
 // Paleta profesional oscura
-const DARK_BG = "#0f172a";         // Fondo principal (azul muy oscuro)
-const DARK_NAV = "#020617";        // Para items activos (casi negro)
-const ACCENT_COLOR = "#2563eb";    // Azul corporativo
-const TEXT_LIGHT = "#f8fafc";      // Texto claro
-const TEXT_GRAY = "#94a3b8";       // Texto secundario
-const BORDER_DARK = "#1e293b";     // Bordes
-const HOVER_BG = "#1e293b";        // Fondo hover
+const DARK_BG = "#0f172a";
+const DARK_NAV = "#020617";
+const ACCENT_COLOR = "#2563eb";
+const TEXT_LIGHT = "#f8fafc";
+const TEXT_GRAY = "#94a3b8";
+const BORDER_DARK = "#1e293b";
+const HOVER_BG = "#1e293b";
 
 /* Contenedor principal */
 const SidebarContainer = styled.aside`
@@ -46,11 +52,8 @@ const SidebarContainer = styled.aside`
 /* Backdrop para móvil */
 const Backdrop = styled.div`
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  background: rgba(0,0,0,0.5);
   z-index: 999;
   opacity: ${({ $open }) => ($open ? 1 : 0)};
   pointer-events: ${({ $open }) => ($open ? "auto" : "none")};
@@ -104,9 +107,7 @@ const MenuItem = styled.button`
     color: ${TEXT_LIGHT};
   }
 
-  &:active {
-    transform: scale(0.98);
-  }
+  &:active { transform: scale(0.98); }
 `;
 
 const MenuIcon = styled.span`
@@ -128,31 +129,43 @@ const Sidebar = ({ onLogout, open = false, onClose = () => {} }) => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
+  // Activos por ruta
   const isDashboard = pathname.startsWith("/dashboard");
+  const isLibreta  = pathname.startsWith("/libreta");
+
+  // Navega y cierra el sidebar en móvil
+  const go = (to) => {
+    navigate(to);
+    onClose();
+  };
 
   return (
     <>
       <Backdrop $open={open} onClick={onClose} />
-      
+
       <SidebarContainer $open={open}>
         <Brand>
           <Logo>Menú</Logo>
         </Brand>
+
         <Menu>
+          {/* Panel (dashboard) */}
           <MenuItem
             $active={isDashboard}
-            onClick={() => navigate("/dashboard")}
+            onClick={() => go("/dashboard")}
             aria-current={isDashboard ? "page" : undefined}
           >
             <MenuIcon $active={isDashboard}><FaTachometerAlt /></MenuIcon>
             <span>Panel</span>
           </MenuItem>
 
+          {/* Contactos → Libreta (V1) */}
           <MenuItem
-            $active={isDashboard}
-            onClick={() => navigate("/dashboard")}
+            $active={isLibreta}
+            onClick={() => go("/libreta")}
+            aria-current={isLibreta ? "page" : undefined}
           >
-            <MenuIcon $active={isDashboard}><FaEnvelope /></MenuIcon>
+            <MenuIcon $active={isLibreta}><FaEnvelope /></MenuIcon>
             <span>Contactos</span>
           </MenuItem>
         </Menu>
