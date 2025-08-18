@@ -32,6 +32,7 @@ const Page = styled.div`
 `;
 
 const Main = styled.main`
+  position: relative;
   background: #ffffff;
   min-height: calc(100vh - ${NAVBAR_HEIGHT}px);
   padding: 32px;
@@ -89,37 +90,18 @@ const PrimaryBtn = styled.button`
   }
 `;
 
-const DangerBtn = styled.button`
-  background-color: #ef4444;
-  color: #fff;
-  border: none;
-  padding: 0.45rem 0.75rem;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background-color: #dc2626;
-    transform: translateY(-1px);
-  }
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
 /* Botón de 3 puntitos + menú ------------------------------------------------ */
 const MenuWrap = styled.div`
   position: relative;
   display: inline-flex;
+  z-index: 10; /* por encima del contenido de la tarjeta */
 `;
 
 const MenuButton = styled.button`
   border: 1px solid #e2e8f0;
-  background: #fff;
-  width: 34px;
-  height: 34px;
+  background: #fff;           /* iOS: evita “botón invisible” */
+  width: 36px;
+  height: 36px;
   border-radius: 8px;
   display: inline-flex;
   align-items: center;
@@ -128,25 +110,21 @@ const MenuButton = styled.button`
   cursor: pointer;
   transition: all 0.2s ease;
 
-  &:hover {
-    background: #f8fafc;
-  }
-  &:active {
-    transform: translateY(0.5px);
-  }
+  &:hover { background: #f8fafc; }
+  &:active { transform: translateY(0.5px); }
 `;
 
 const Popup = styled.div`
   position: absolute;
   right: 0;
   top: 40px;
-  min-width: 160px;
+  min-width: 170px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 10px 18px rgba(2, 6, 23, 0.08);
+  box-shadow: 0 12px 22px rgba(2, 6, 23, 0.12);
   border-radius: 10px;
   padding: 6px;
-  z-index: 5;
+  z-index: 9999; /* asegura visibilidad sobre todo */
 `;
 
 const PopupItem = styled.button`
@@ -162,9 +140,7 @@ const PopupItem = styled.button`
   font-size: 0.9rem;
   transition: background 0.15s ease;
 
-  &:hover {
-    background: #f1f5f9;
-  }
+  &:hover { background: #f1f5f9; }
 `;
 
 /* Tabla (desktop) ----------------------------------------------------------- */
@@ -176,13 +152,11 @@ const TableCard = styled.section`
   overflow-x: auto;
   overflow-y: hidden;
 
-  @media (max-width: ${BP_MD}px) {
-    display: none;
-  }
+  @media (max-width: ${BP_MD}px) { display: none; }
 `;
 
 const TableInner = styled.div`
-  min-width: 1280px;
+  min-width: 1280px; /* asegura la columna de acciones */
 `;
 
 const Row = styled.div`
@@ -193,9 +167,7 @@ const Row = styled.div`
   align-items: center;
   transition: background 0.2s ease;
 
-  &:hover {
-    background: #f8fafc;
-  }
+  &:hover { background: #f8fafc; }
 
   &:first-child {
     background-color: #f8fafc;
@@ -216,10 +188,7 @@ const Cell = styled.div`
     color: #2563eb;
     text-decoration: none;
   }
-  a:hover {
-    color: #1d4ed8;
-    text-decoration: underline;
-  }
+  a:hover { color: #1d4ed8; text-decoration: underline; }
 `;
 
 const ActionsCell = styled(Cell)`
@@ -236,6 +205,7 @@ const CardsGrid = styled.section`
 `;
 
 const Card = styled.article`
+  position: relative; /* ancla el popup dentro de la tarjeta */
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
@@ -284,21 +254,14 @@ const Field = styled.div`
   align-items: center;
   gap: 10px;
 
-  span {
-    font-size: 0.85rem;
-    color: #64748b;
-    font-weight: 600;
-  }
+  span { font-size: 0.85rem; color: #64748b; font-weight: 600; }
   a {
     font-size: 0.95rem;
     color: #2563eb;
     word-break: break-word;
     text-decoration: none;
   }
-  a:hover {
-    color: #1d4ed8;
-    text-decoration: underline;
-  }
+  a:hover { color: #1d4ed8; text-decoration: underline; }
 `;
 
 /* Estados ------------------------------------------------------------------- */
@@ -327,17 +290,17 @@ function DealContacts() {
   const [error, setError] = useState("");
   const [openForm, setOpenForm] = useState(false);
 
-  // Menú abierto (por id del contacto)
+  // Menú abierto (id del contacto)
   const [openMenuId, setOpenMenuId] = useState(null);
 
-  // Cerrar menú al hacer click fuera (listener global)
+  // Cerrar menú al hacer click fuera
   useEffect(() => {
-    const closeOnClickOutside = () => setOpenMenuId(null);
-    document.addEventListener("click", closeOnClickOutside);
-    return () => document.removeEventListener("click", closeOnClickOutside);
+    const close = () => setOpenMenuId(null);
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
   }, []);
 
-  /* Cargar datos al montar -------------------------------------------------- */
+  /* Cargar datos ------------------------------------------------------------ */
   useEffect(() => {
     (async () => {
       try {
@@ -354,64 +317,51 @@ function DealContacts() {
   /* Total para meta --------------------------------------------------------- */
   const total = useMemo(() => items.length, [items]);
 
-  /* Guardar nuevo (desde el modal) ----------------------------------------- */
+  /* Crear (modal) ----------------------------------------------------------- */
   const handleCreate = async (payload) => {
     const created = await createDealContact(payload);
-    setItems((prev) => [created, ...prev]); // prepend (más reciente arriba)
+    setItems((prev) => [created, ...prev]);
     setOpenForm(false);
   };
 
-  /* Eliminar contacto ------------------------------------------------------- */
+  /* Eliminar ---------------------------------------------------------------- */
   const handleDelete = async (id) => {
     const ok = window.confirm("¿Seguro que quieres eliminar este contacto?");
     if (!ok) return;
-
     try {
       await deleteDealContact(id);
       setItems((prev) => prev.filter((c) => c._id !== id));
       setOpenMenuId(null);
     } catch (e) {
-      console.error(e);
       setError("No se pudo eliminar el contacto. Intenta nuevamente.");
       setTimeout(() => setError(""), 4000);
     }
   };
 
-  /* Placeholder de editar (V2) ---------------------------------------------- */
+  /* Editar (placeholder V2) ------------------------------------------------- */
   const handleEdit = (item) => {
     setOpenMenuId(null);
-    // V1.1: solo placeholder. En V2 abriremos el mismo modal con initialValues
-    // y llamaremos a updateDealContact(id, payload).
     alert("Editar contacto (V2): pronto habilitaremos esta opción.");
   };
 
   /* Helpers UI -------------------------------------------------------------- */
   const formatDate = (v) => {
     if (!v) return "—";
-    try {
-      return new Date(v).toLocaleDateString("es-CL");
-    } catch {
-      return "—";
-    }
+    try { return new Date(v).toLocaleDateString("es-CL"); }
+    catch { return "—"; }
   };
 
   const isActive = (it) => {
-    if (!it?.fechaTermino) return true; // sin término = activo
-    const fin = new Date(it.fechaTermino);
-    const now = new Date();
-    return fin >= now;
+    if (!it?.fechaTermino) return true;
+    return new Date(it.fechaTermino) >= new Date();
   };
 
-  // Evita que el click en el botón cierre el popup por el listener global
+  // Evitar que el listener global cierre el popup
   const onMenuButtonClick = (e, id) => {
     e.stopPropagation();
     setOpenMenuId((curr) => (curr === id ? null : id));
   };
-
-  const onPopupClick = (e) => {
-    // Evitar burbujeo para no cerrar inmediatamente
-    e.stopPropagation();
-  };
+  const onPopupClick = (e) => e.stopPropagation();
 
   return (
     <Page>
@@ -460,9 +410,7 @@ function DealContacts() {
                 <Row key={it._id}>
                   <Cell>{it.nombre}</Cell>
                   <Cell>{it.nombreEmpresa}</Cell>
-                  <Cell>
-                    <a href={`tel:${it.telefono}`}>{it.telefono}</a>
-                  </Cell>
+                  <Cell><a href={`tel:${it.telefono}`}>{it.telefono}</a></Cell>
                   <Cell>{it.direccion}</Cell>
                   <Cell title={it.descripcionServicio}>
                     {it.descripcionServicio?.length > 40
@@ -471,13 +419,7 @@ function DealContacts() {
                   </Cell>
                   <Cell>{formatDate(it.fechaInicio)}</Cell>
                   <Cell>
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 8,
-                      }}
-                    >
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
                       {formatDate(it.fechaTermino)}
                       <Badge $active={isActive(it)}>
                         {isActive(it) ? "Activo" : "Finalizado"}
@@ -497,13 +439,8 @@ function DealContacts() {
 
                       {openMenuId === it._id && (
                         <Popup onClick={onPopupClick}>
-                          <PopupItem onClick={() => handleEdit(it)}>
-                            Modificar
-                          </PopupItem>
-                          <PopupItem
-                            $danger
-                            onClick={() => handleDelete(it._id)}
-                          >
+                          <PopupItem onClick={() => handleEdit(it)}>Modificar</PopupItem>
+                          <PopupItem $danger onClick={() => handleDelete(it._id)}>
                             Eliminar
                           </PopupItem>
                         </Popup>
@@ -529,27 +466,29 @@ function DealContacts() {
                   <CardTitle>{it.nombreEmpresa}</CardTitle>
 
                   {/* Menú en móvil */}
-                  <MenuWrap>
-                    <MenuButton
-                      aria-label="Acciones"
-                      onClick={(e) => onMenuButtonClick(e, it._id)}
-                    >
-                      <FaEllipsisV size={14} />
-                    </MenuButton>
-                    {openMenuId === it._id && (
-                      <Popup onClick={onPopupClick}>
-                        <PopupItem onClick={() => handleEdit(it)}>
-                          Modificar
-                        </PopupItem>
-                        <PopupItem
-                          $danger
-                          onClick={() => handleDelete(it._id)}
-                        >
-                          Eliminar
-                        </PopupItem>
-                      </Popup>
-                    )}
-                  </MenuWrap>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <Badge $active={isActive(it)}>
+                      {isActive(it) ? "Activo" : "Finalizado"}
+                    </Badge>
+
+                    <MenuWrap onClick={(e) => e.stopPropagation()}>
+                      <MenuButton
+                        aria-label="Acciones"
+                        onClick={(e) => onMenuButtonClick(e, it._id)}
+                      >
+                        <FaEllipsisV size={14} />
+                      </MenuButton>
+
+                      {openMenuId === it._id && (
+                        <Popup onClick={onPopupClick}>
+                          <PopupItem onClick={() => handleEdit(it)}>Modificar</PopupItem>
+                          <PopupItem $danger onClick={() => handleDelete(it._id)}>
+                            Eliminar
+                          </PopupItem>
+                        </Popup>
+                      )}
+                    </MenuWrap>
+                  </div>
                 </CardHeader>
 
                 <CardBody>
@@ -579,11 +518,7 @@ function DealContacts() {
                   </Field>
                 </CardBody>
 
-                <CardFooter>
-                  <Badge $active={isActive(it)}>
-                    {isActive(it) ? "Activo" : "Finalizado"}
-                  </Badge>
-                </CardFooter>
+                <CardFooter />
               </Card>
             ))
           )}
