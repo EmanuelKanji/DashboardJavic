@@ -2,7 +2,7 @@
  * pages/DealContacts.js
  * ----------------------------------------------------------------------------
  * Vista "Libreta de contactos (contratos cerrados)" - V1
- * - Lista los registros guardados en la base (tabla desktop / tarjetas móvil).
+ * - Lista (tabla desktop con scroll horizontal si no cabe / tarjetas móvil).
  * - Botón "Agregar contacto" (abre modal con DealContactForm).
  * - Botón "Eliminar" por registro (confirmación + actualización inmediata).
  * - Usa servicios API: getDealContacts, createDealContact, deleteDealContact.
@@ -95,15 +95,24 @@ const DangerBtn = styled.button`
   &:active { transform: translateY(0); }
 `;
 
-/* Tabla (desktop) ----------------------------------------------------------- */
+/* Tabla (desktop) -----------------------------------------------------------
+   - overflow-x: auto para permitir scroll horizontal si no caben las columnas.
+   - TableInner fuerza un ancho mínimo para que la última columna (Acciones)
+     no se corte nunca. */
 const TableCard = styled.section`
   background: #ffffff;
   border-radius: 10px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   border: 1px solid #e2e8f0;
-  overflow: hidden;
+  overflow-x: auto;   /* 👈 importante */
+  overflow-y: hidden;
 
   @media (max-width: ${BP_MD}px) { display: none; }
+`;
+
+/* Contenedor interno con ancho mínimo para todas las columnas */
+const TableInner = styled.div`
+  min-width: 1100px;  /* 👈 ajusta si agregas/quitas columnas */
 `;
 
 const Row = styled.div`
@@ -271,7 +280,6 @@ function DealContacts() {
     } catch (e) {
       console.error(e);
       setError("No se pudo eliminar el contacto. Intenta nuevamente.");
-      // Opcional: limpiar alerta después de unos segundos
       setTimeout(() => setError(""), 4000);
     }
   };
@@ -315,50 +323,52 @@ function DealContacts() {
 
         {!!error && <Alert>{error}</Alert>}
 
-        {/* Tabla (desktop) */}
+        {/* Tabla (desktop) con scroll horizontal si no cabe */}
         <TableCard>
-          <Row>
-            <Cell>Nombre</Cell>
-            <Cell>Empresa</Cell>
-            <Cell>Teléfono</Cell>
-            <Cell>Dirección</Cell>
-            <Cell>Servicio</Cell>
-            <Cell>Inicio</Cell>
-            <Cell>Término</Cell>
-            <Cell>Acciones</Cell>
-          </Row>
+          <TableInner>
+            <Row>
+              <Cell>Nombre</Cell>
+              <Cell>Empresa</Cell>
+              <Cell>Teléfono</Cell>
+              <Cell>Dirección</Cell>
+              <Cell>Servicio</Cell>
+              <Cell>Inicio</Cell>
+              <Cell>Término</Cell>
+              <Cell>Acciones</Cell>
+            </Row>
 
-          {loading ? (
-            <Empty>Cargando libreta...</Empty>
-          ) : items.length === 0 ? (
-            <Empty>No hay contactos en la libreta</Empty>
-          ) : (
-            items.map((it) => (
-              <Row key={it._id}>
-                <Cell>{it.nombre}</Cell>
-                <Cell>{it.nombreEmpresa}</Cell>
-                <Cell><a href={`tel:${it.telefono}`}>{it.telefono}</a></Cell>
-                <Cell>{it.direccion}</Cell>
-                <Cell title={it.descripcionServicio}>
-                  {it.descripcionServicio?.length > 40
-                    ? it.descripcionServicio.slice(0, 40) + "…"
-                    : it.descripcionServicio || "—"}
-                </Cell>
-                <Cell>{formatDate(it.fechaInicio)}</Cell>
-                <Cell>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                    {formatDate(it.fechaTermino)}
-                    <Badge $active={isActive(it)}>
-                      {isActive(it) ? "Activo" : "Finalizado"}
-                    </Badge>
-                  </span>
-                </Cell>
-                <ActionsCell>
-                  <DangerBtn onClick={() => handleDelete(it._id)}>Eliminar</DangerBtn>
-                </ActionsCell>
-              </Row>
-            ))
-          )}
+            {loading ? (
+              <Empty>Cargando libreta...</Empty>
+            ) : items.length === 0 ? (
+              <Empty>No hay contactos en la libreta</Empty>
+            ) : (
+              items.map((it) => (
+                <Row key={it._id}>
+                  <Cell>{it.nombre}</Cell>
+                  <Cell>{it.nombreEmpresa}</Cell>
+                  <Cell><a href={`tel:${it.telefono}`}>{it.telefono}</a></Cell>
+                  <Cell>{it.direccion}</Cell>
+                  <Cell title={it.descripcionServicio}>
+                    {it.descripcionServicio?.length > 40
+                      ? it.descripcionServicio.slice(0, 40) + "…"
+                      : it.descripcionServicio || "—"}
+                  </Cell>
+                  <Cell>{formatDate(it.fechaInicio)}</Cell>
+                  <Cell>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                      {formatDate(it.fechaTermino)}
+                      <Badge $active={isActive(it)}>
+                        {isActive(it) ? "Activo" : "Finalizado"}
+                      </Badge>
+                    </span>
+                  </Cell>
+                  <ActionsCell>
+                    <DangerBtn onClick={() => handleDelete(it._id)}>Eliminar</DangerBtn>
+                  </ActionsCell>
+                </Row>
+              ))
+            )}
+          </TableInner>
         </TableCard>
 
         {/* Tarjetas (móvil) */}
