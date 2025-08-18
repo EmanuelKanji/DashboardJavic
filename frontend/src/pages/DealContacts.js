@@ -45,7 +45,7 @@ const Main = styled.main`
     padding: 24px;
     padding-top: calc(${NAVBAR_HEIGHT}px + 16px);
   }
-`));
+`;
 
 /* Header -------------------------------------------------------------------- */
 const Head = styled.header`
