@@ -1,15 +1,20 @@
 /**
  * contactController.js
  * ----------------------------------------------------------------------------
- * Controlador para gestionar los contactos recibidos desde el sitio de Javic.
- * Funciones:
- * - Obtener todos los contactos
- * - Eliminar un contacto por ID
- * - Marcar contacto como "contactado"
+ * Controlador para gestionar los contactos del Dashboard.
+ * - GET    /api/contacts                 → lista (más recientes primero)
+ * - DELETE /api/contacts/:id             → elimina por ID
+ * - PATCH  /api/contacts/:id/contacted   → marca como contactado (o según body)
  * ----------------------------------------------------------------------------
  */
 
+const mongoose = require('mongoose');
 const Contact = require('../models/Contact');
+
+/* Utilidad: validar IDs de Mongo -------------------------------------------
+   Evita errores de casteo cuando llega un id inválido en la ruta.
+--------------------------------------------------------------------------- */
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 // @desc    Obtener todos los contactos (más recientes primero)
 // @route   GET /api/contacts
@@ -17,10 +22,10 @@ const Contact = require('../models/Contact');
 exports.getContacts = async (req, res) => {
   try {
     const contacts = await Contact.find().sort({ createdAt: -1 });
-    res.json(contacts);
+    return res.json(contacts);
   } catch (err) {
     console.error('Error al obtener contactos:', err);
-    res.status(500).json({ error: 'Error al obtener los contactos' });
+    return res.status(500).json({ message: 'Error al obtener los contactos' });
   }
 };
 
@@ -30,11 +35,20 @@ exports.getContacts = async (req, res) => {
 exports.deleteContact = async (req, res) => {
   try {
     const { id } = req.params;
-    await Contact.findByIdAndDelete(id);
-    res.json({ message: 'Contacto eliminado correctamente' });
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: 'ID inválido' });
+    }
+
+    const deleted = await Contact.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ message: 'Contacto no encontrado' });
+    }
+
+    return res.json({ message: 'Contacto eliminado correctamente' });
   } catch (err) {
     console.error('Error al eliminar contacto:', err);
-    res.status(500).json({ error: 'Error al eliminar contacto' });
+    return res.status(500).json({ message: 'Error al eliminar contacto' });
   }
 };
 
@@ -44,14 +58,26 @@ exports.deleteContact = async (req, res) => {
 exports.markAsContacted = async (req, res) => {
   try {
     const { id } = req.params;
+    // Permite sobreescribir valor vía body { contacted: boolean }
+    const { contacted = true } = req.body || {};
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: 'ID inválido' });
+    }
+
     const updated = await Contact.findByIdAndUpdate(
       id,
-      { contacted: true },
+      { contacted: !!contacted },
       { new: true }
     );
-    res.json(updated);
+
+    if (!updated) {
+      return res.status(404).json({ message: 'Contacto no encontrado' });
+    }
+
+    return res.json(updated);
   } catch (err) {
     console.error('Error al marcar como contactado:', err);
-    res.status(500).json({ error: 'Error al actualizar contacto' });
+    return res.status(500).json({ message: 'Error al actualizar contacto' });
   }
 };
